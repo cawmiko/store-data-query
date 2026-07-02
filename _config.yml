@@ -1,0 +1,7 @@
+name: Store Data Query
+exclude:
+  - data/
+keep_files:
+  - data/
+  - index.json
+plugins: []
