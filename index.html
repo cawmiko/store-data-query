@@ -3,35 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>门店数据查询</title>
+<title>商业流转商机查询看板</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
 .header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#fff;padding:32px 24px 28px;text-align:center}
 .header h1{font-size:22px;font-weight:600;letter-spacing:1px}
 .header p{font-size:13px;color:rgba(255,255,255,.6);margin-top:6px}
-.container{max-width:960px;margin:0 auto;padding:20px 16px 40px}
-.toolbar{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.toolbar label{font-size:13px;color:#666;white-space:nowrap}
-.search-box{position:relative;flex:1;min-width:180px}
-.search-box input{width:100%;padding:8px 12px 8px 34px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;transition:border .2s}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+.toolbar{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:11px;color:#999;letter-spacing:.3px}
+.search-box{position:relative;min-width:170px}
+.search-box input{width:100%;padding:8px 12px 8px 32px;border:1px solid #ddd;border-radius:8px;font-size:13px;outline:none;transition:border .2s}
 .search-box input:focus{border-color:#0f3460}
-.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#999}
-.dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:320px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:4px}
+.search-box svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#bbb}
+.dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;max-height:300px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:4px}
 .dropdown.show{display:block}
-.dropdown-item{padding:8px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.dropdown-item{padding:7px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 .dropdown-item:hover{background:#f5f7ff}
-.dropdown-item .cnt{color:#999;font-size:12px}
+.dropdown-item .cnt{color:#999;font-size:11px}
 .dropdown-item.active{background:#e8edff;color:#0f3460;font-weight:500}
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.cat-pill{padding:6px 14px;border:1px solid #ddd;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;color:#555}
+.cat-pill:hover{border-color:#0f3460;color:#0f3460}
+.cat-pill.active{background:#0f3460;color:#fff;border-color:#0f3460}
 .btn{padding:8px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:#0f3460;color:#fff}
 .btn-primary:hover{background:#1a4a8a}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-outline{background:transparent;border:1px solid #ddd;color:#555}
-.btn-outline:hover{border-color:#0f3460;color:#0f3460}
 .stats-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.stat-card{background:#fff;border-radius:10px;padding:14px 18px;flex:1;min-width:140px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.stat-card .label{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px}
+.stat-card{background:#fff;border-radius:10px;padding:14px 18px;flex:1;min-width:120px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-card .label{font-size:11px;color:#999;letter-spacing:.3px}
 .stat-card .value{font-size:22px;font-weight:700;color:#1a1a2e;margin-top:2px}
 .stat-card .sub{font-size:11px;color:#0f3460;margin-top:2px}
 .table-wrap{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
@@ -39,8 +42,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .table-header span{font-size:14px;font-weight:600}
 .table-header .page-info{font-size:12px;color:#999}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 16px;text-align:left;font-size:12px;color:#888;font-weight:500;border-bottom:1px solid #f0f0f0;background:#fafbfc;white-space:nowrap}
-td{padding:9px 16px;font-size:13px;border-bottom:1px solid #f5f5f5}
+th{padding:10px 14px;text-align:left;font-size:12px;color:#888;font-weight:500;border-bottom:1px solid #f0f0f0;background:#fafbfc;white-space:nowrap}
+td{padding:9px 14px;font-size:13px;border-bottom:1px solid #f5f5f5}
 tr:hover td{background:#f9faff}
 .pagination{padding:12px 20px;display:flex;justify-content:center;gap:4px;border-top:1px solid #f0f0f0}
 .pagination button{padding:6px 12px;border:1px solid #e0e0e0;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#555}
@@ -48,7 +51,6 @@ tr:hover td{background:#f9faff}
 .pagination button.active{background:#0f3460;color:#fff;border-color:#0f3460}
 .pagination button:disabled{opacity:.3;cursor:not-allowed}
 .empty{text-align:center;padding:60px 20px;color:#bbb}
-.empty svg{margin-bottom:12px}
 .empty p{font-size:14px}
 .loading{text-align:center;padding:40px;color:#999}
 .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
@@ -57,30 +59,37 @@ tr:hover td{background:#f9faff}
 .tag-channel{background:#e3f2fd;color:#1565c0}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:200;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:640px){
+@media(max-width:768px){
   .toolbar{flex-direction:column;align-items:stretch}
   .stats-bar{flex-direction:column}
   th,td{padding:8px 10px;font-size:12px}
   .header h1{font-size:18px}
+  .cat-pills{max-height:80px;overflow-y:auto}
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>门店数据查询</h1>
-  <p>选择城市查看门店明细，支持下载 CSV</p>
+  <h1>商业流转商机查询看板</h1>
+  <p>按城市 / 类目筛选门店商机，支持下载 CSV</p>
 </div>
 
 <div class="container">
   <div class="toolbar">
-    <label>选择城市</label>
-    <div class="search-box">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="citySearch" placeholder="搜索城市名称..." autocomplete="off">
-      <div class="dropdown" id="dropdown"></div>
+    <div class="filter-group">
+      <label>选择城市</label>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="citySearch" placeholder="搜索城市..." autocomplete="off">
+        <div class="dropdown" id="cityDropdown"></div>
+      </div>
     </div>
-    <button class="btn btn-primary" id="btnDownload" disabled onclick="downloadCSV()">
+    <div class="filter-group" style="flex:1;min-width:200px">
+      <label>筛选类目</label>
+      <div class="cat-pills" id="catPills"></div>
+    </div>
+    <button class="btn btn-primary" id="btnDownload" disabled onclick="downloadCSV()" style="align-self:flex-end">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       下载 CSV
     </button>
@@ -88,7 +97,7 @@ tr:hover td{background:#f9faff}
 
   <div class="stats-bar">
     <div class="stat-card">
-      <div class="label">总门店</div>
+      <div class="label">总商机</div>
       <div class="value" id="totalStores">-</div>
     </div>
     <div class="stat-card">
@@ -96,8 +105,12 @@ tr:hover td{background:#f9faff}
       <div class="value" id="totalCities">-</div>
     </div>
     <div class="stat-card">
-      <div class="label">当前城市</div>
-      <div class="value" id="currentCity">-</div>
+      <div class="label">覆盖类目</div>
+      <div class="value" id="totalCats">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">当前筛选</div>
+      <div class="value" id="currentFilter">-</div>
       <div class="sub" id="currentCount"></div>
     </div>
   </div>
@@ -110,10 +123,10 @@ tr:hover td{background:#f9faff}
     <div style="overflow-x:auto">
       <table>
         <thead>
-          <tr><th>商户 PID</th><th>归属</th><th>门店数</th><th>门店名识别</th></tr>
+          <tr><th>商户 PID</th><th>归属</th><th>城市</th><th>类目</th><th>门店数</th><th>门店名识别</th></tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="4" class="empty"><p>请从上方选择一个城市</p></td></tr>
+          <tr><td colspan="6" class="empty"><p>请从上方选择城市和类目</p></td></tr>
         </tbody>
       </table>
     </div>
@@ -128,7 +141,9 @@ const PAGE_SIZE = 50;
 let indexData = null;
 let chunkCache = {};
 let currentCity = null;
-let currentData = [];
+let currentCat = '全部';
+let cityData = [];
+let filteredData = [];
 let currentPage = 1;
 
 const TAG_MAP = {'直营':'tag-direct','电销':'tag-telesales','渠道':'tag-channel'};
@@ -140,17 +155,41 @@ async function init() {
   const totalStores = cities.reduce((s,c) => s + indexData[c].count, 0);
   document.getElementById('totalStores').textContent = totalStores.toLocaleString();
   document.getElementById('totalCities').textContent = cities.length;
-  setupSearch();
+
+  // Collect all categories
+  const allCats = {};
+  cities.forEach(c => {
+    const cats = indexData[c].cats || {};
+    Object.keys(cats).forEach(k => { allCats[k] = (allCats[k]||0) + cats[k]; });
+  });
+  const catNames = Object.keys(allCats).sort((a,b) => allCats[b] - allCats[a]);
+  document.getElementById('totalCats').textContent = catNames.length;
+
+  // Render category pills
+  const pillsEl = document.getElementById('catPills');
+  pillsEl.innerHTML = ['全部', ...catNames].map(c =>
+    `<div class="cat-pill${c==='全部'?' active':''}" data-cat="${c}">${c}</div>`
+  ).join('');
+  pillsEl.addEventListener('click', e => {
+    const pill = e.target.closest('.cat-pill');
+    if (!pill) return;
+    pillsEl.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentCat = pill.dataset.cat;
+    applyFilter();
+  });
+
+  setupCitySearch();
 }
 
-function setupSearch() {
+function setupCitySearch() {
   const input = document.getElementById('citySearch');
-  const dd = document.getElementById('dropdown');
+  const dd = document.getElementById('cityDropdown');
   const cities = Object.keys(indexData).sort((a,b) => indexData[b].count - indexData[a].count);
 
   function render(filter) {
     const q = (filter||'').trim();
-    const matches = q ? cities.filter(c => c.includes(q)) : cities.slice(0, 50);
+    const matches = q ? cities.filter(c => c.includes(q)) : cities.slice(0, 40);
     if (!matches.length) { dd.innerHTML = '<div class="dropdown-item" style="color:#bbb">无匹配城市</div>'; dd.classList.add('show'); return; }
     dd.innerHTML = matches.map(c =>
       `<div class="dropdown-item${c===currentCity?' active':''}" data-city="${c}"><span>${c}</span><span class="cnt">${indexData[c].count.toLocaleString()} 条</span></div>`
@@ -182,28 +221,38 @@ async function loadChunk(chunkId) {
 
 async function selectCity(city) {
   currentCity = city;
-  const info = indexData[city];
-  document.getElementById('currentCity').textContent = city;
-  document.getElementById('currentCount').textContent = `${info.count.toLocaleString()} 条记录`;
   document.getElementById('btnDownload').disabled = false;
-  document.getElementById('tableTitle').textContent = city + ' 门店明细';
-  document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="loading">加载中...</td></tr>';
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" class="loading">加载中...</td></tr>';
   document.getElementById('pagination').innerHTML = '';
 
+  const info = indexData[city];
   const chunk = await loadChunk(info.chunk);
-  currentData = (chunk[city] || []).map(r => ({pid:r[0], attr:r[1], stores:r[2], name:r[3]}));
+  // row: [PID, 归属, 城市, 门店数, 门店名, 类目]
+  cityData = (chunk[city] || []).map(r => ({pid:r[0], attr:r[1], city:r[2], stores:r[3], name:r[4], cat:r[5]}));
   currentPage = 1;
+  applyFilter();
+}
+
+function applyFilter() {
+  if (!currentCity) return;
+  filteredData = currentCat === '全部' ? cityData : cityData.filter(d => d.cat === currentCat);
+  currentPage = 1;
+
+  const label = currentCity + (currentCat !== '全部' ? ' / ' + currentCat : '');
+  document.getElementById('currentFilter').textContent = label;
+  document.getElementById('currentCount').textContent = `${filteredData.length.toLocaleString()} 条记录`;
+  document.getElementById('tableTitle').textContent = label + ' 商机明细';
   renderPage();
 }
 
 function renderPage() {
-  const totalPages = Math.ceil(currentData.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const start = (currentPage - 1) * PAGE_SIZE;
-  const pageData = currentData.slice(start, start + PAGE_SIZE);
+  const pageData = filteredData.slice(start, start + PAGE_SIZE);
   const tbody = document.getElementById('tableBody');
 
   if (!pageData.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty"><p>该城市暂无数据</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><p>该筛选条件下暂无数据</p></td></tr>';
     document.getElementById('pageInfo').textContent = '';
     document.getElementById('pagination').innerHTML = '';
     return;
@@ -211,12 +260,11 @@ function renderPage() {
 
   tbody.innerHTML = pageData.map(d => {
     const tagClass = TAG_MAP[d.attr] || '';
-    return `<tr><td>${d.pid}</td><td><span class="tag ${tagClass}">${d.attr}</span></td><td>${d.stores}</td><td>${d.name}</td></tr>`;
+    return `<tr><td>${d.pid}</td><td><span class="tag ${tagClass}">${d.attr}</span></td><td>${d.city}</td><td>${d.cat||''}</td><td>${d.stores}</td><td>${d.name||''}</td></tr>`;
   }).join('');
 
-  document.getElementById('pageInfo').textContent = `第 ${start+1}-${Math.min(start+PAGE_SIZE, currentData.length)} 条，共 ${currentData.length.toLocaleString()} 条`;
+  document.getElementById('pageInfo').textContent = `第 ${start+1}-${Math.min(start+PAGE_SIZE, filteredData.length)} 条，共 ${filteredData.length.toLocaleString()} 条`;
 
-  // Pagination
   const pag = document.getElementById('pagination');
   if (totalPages <= 1) { pag.innerHTML = ''; return; }
   let html = `<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">上一页</button>`;
@@ -231,14 +279,13 @@ function renderPage() {
 
 function getPageRange(cur, total, max) {
   if (total <= max + 2) return Array.from({length:total},(_,i)=>i+1);
-  const pages = [];
-  pages.push(1);
-  let start = Math.max(2, cur - Math.floor(max/2));
-  let end = Math.min(total - 1, start + max - 1);
-  start = Math.max(2, end - max + 1);
-  if (start > 2) pages.push('...');
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (end < total - 1) pages.push('...');
+  const pages = [1];
+  let s = Math.max(2, cur - Math.floor(max/2));
+  let e = Math.min(total - 1, s + max - 1);
+  s = Math.max(2, e - max + 1);
+  if (s > 2) pages.push('...');
+  for (let i = s; i <= e; i++) pages.push(i);
+  if (e < total - 1) pages.push('...');
   pages.push(total);
   return pages;
 }
@@ -246,17 +293,20 @@ function getPageRange(cur, total, max) {
 function goPage(p) { currentPage = p; renderPage(); document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth'}); }
 
 function downloadCSV() {
-  if (!currentCity || !currentData.length) return;
+  if (!currentCity || !filteredData.length) return;
   const BOM = '\uFEFF';
-  const header = '商户PID,归属,门店数,门店名识别\n';
-  const rows = currentData.map(d => `"${d.pid}","${d.attr}","${d.stores}","${(d.name||'').replace(/"/g,'""')}"`).join('\n');
+  const header = '商户PID,归属,城市,类目,门店数,门店名识别\n';
+  const rows = filteredData.map(d =>
+    `"${d.pid}","${d.attr}","${d.city}","${(d.cat||'').replace(/"/g,'""')}","${d.stores}","${(d.name||'').replace(/"/g,'""')}"`
+  ).join('\n');
   const blob = new Blob([BOM + header + rows], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${currentCity}_门店数据.csv`;
+  const fname = currentCity + (currentCat !== '全部' ? '_' + currentCat : '') + '_商机数据.csv';
+  a.download = fname;
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast(`已下载 ${currentCity} ${currentData.length} 条数据`);
+  showToast(`已下载 ${fname}（${filteredData.length} 条）`);
 }
 
 function showToast(msg) {
