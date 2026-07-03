@@ -64,6 +64,15 @@ tr:hover td{background:#f9faff}
 .notice-body.show{display:block}
 .notice-body li{margin-bottom:2px}
 .notice-body li::marker{color:#0f3460}
+.region-select{position:relative;min-width:130px}
+.region-select .region-btn{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:border .2s}
+.region-select .region-btn:focus,.region-select.open .region-btn{border-color:#0f3460}
+.region-select .region-dd{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:4px}
+.region-select.open .region-dd{display:block}
+.region-dd .dropdown-item{padding:7px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.region-dd .dropdown-item:hover{background:#f5f7ff}
+.region-dd .dropdown-item .cnt{color:#999;font-size:11px}
+.region-dd .dropdown-item.active{background:#e8edff;color:#0f3460;font-weight:500}
 @media(max-width:768px){
   .toolbar{flex-direction:column;align-items:stretch}
   .stats-bar{flex-direction:column}
@@ -76,7 +85,7 @@ tr:hover td{background:#f9faff}
 
 <div class="header">
   <h1>商业流转商机查询看板</h1>
-  <p>按城市 / 类目筛选门店商机，支持下载 CSV</p>
+  <p>按大区 / 城市 / 类目筛选门店商机，支持下载 CSV</p>
 </div>
 
 <div class="container">
@@ -93,6 +102,16 @@ tr:hover td{background:#f9faff}
     </ol>
   </div>
   <div class="toolbar">
+    <div class="filter-group">
+      <label>选择大区</label>
+      <div class="region-select" id="regionSelect">
+        <button class="region-btn" id="regionBtn" type="button">
+          <span id="regionLabel">全部大区</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="region-dd" id="regionDd"></div>
+      </div>
+    </div>
     <div class="filter-group">
       <label>选择城市</label>
       <div class="search-box">
@@ -160,13 +179,17 @@ tr:hover td{background:#f9faff}
 const PAGE_SIZE = 50;
 let indexData = null;
 let chunkCache = {};
+let currentRegion = '全部';
 let currentCity = null;
 let currentCat = '全部';
 let cityData = [];
 let filteredData = [];
 let currentPage = 1;
+let regionInfo = {};
+let cityListByRegion = {};
 
 const TAG_MAP = {'直营':'tag-direct','电销':'tag-telesales','渠道':'tag-channel'};
+const REGION_ORDER = ['全部','华东','华北','华西','华南','华中'];
 
 async function init() {
   const resp = await fetch('index.json');
@@ -175,6 +198,23 @@ async function init() {
   const totalStores = cities.reduce((s,c) => s + indexData[c].count, 0);
   document.getElementById('totalStores').textContent = totalStores.toLocaleString();
   document.getElementById('totalCities').textContent = cities.length;
+
+  // Build region info
+  regionInfo = {};
+  cityListByRegion = {'全部': cities};
+  REGION_ORDER.slice(1).forEach(r => { regionInfo[r] = {count: 0, cities: []}; });
+
+  cities.forEach(c => {
+    const r = indexData[c].region;
+    if (regionInfo[r]) {
+      regionInfo[r].count += indexData[c].count;
+      regionInfo[r].cities.push(c);
+    }
+  });
+  REGION_ORDER.slice(1).forEach(r => {
+    cityListByRegion[r] = regionInfo[r].cities.sort((a,b) => indexData[b].count - indexData[a].count);
+  });
+  cityListByRegion['全部'] = cities.slice().sort((a,b) => indexData[b].count - indexData[a].count);
 
   // Collect all categories
   const allCats = {};
@@ -185,16 +225,74 @@ async function init() {
   const catNames = Object.keys(allCats).sort((a,b) => allCats[b] - allCats[a]);
   document.getElementById('totalCats').textContent = catNames.length;
 
+  setupRegionSelect();
   setupCitySearch();
   setupCatSearch(catNames, allCats);
+}
+
+function setupRegionSelect() {
+  const sel = document.getElementById('regionSelect');
+  const btn = document.getElementById('regionBtn');
+  const dd = document.getElementById('regionDd');
+
+  function render() {
+    dd.innerHTML = REGION_ORDER.map(r => {
+      const cnt = r === '全部'
+        ? Object.values(regionInfo).reduce((s,v) => s + v.count, 0)
+        : (regionInfo[r] ? regionInfo[r].count : 0);
+      const nCities = r === '全部'
+        ? Object.keys(indexData).length
+        : (regionInfo[r] ? regionInfo[r].cities.length : 0);
+      return `<div class="dropdown-item${r===currentRegion?' active':''}" data-region="${r}">
+        <span>${r}</span><span class="cnt">${nCities}城 ${cnt.toLocaleString()}条</span></div>`;
+    }).join('');
+  }
+
+  btn.addEventListener('click', () => {
+    render();
+    sel.classList.toggle('open');
+  });
+
+  dd.addEventListener('click', e => {
+    const item = e.target.closest('.dropdown-item');
+    if (item && item.dataset.region) {
+      selectRegion(item.dataset.region);
+      sel.classList.remove('open');
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#regionSelect')) sel.classList.remove('open');
+  });
+}
+
+function selectRegion(region) {
+  currentRegion = region;
+  document.getElementById('regionLabel').textContent = region === '全部' ? '全部大区' : region;
+
+  // Clear city selection when region changes
+  currentCity = null;
+  cityData = [];
+  filteredData = [];
+  document.getElementById('citySearch').value = '';
+  document.getElementById('btnDownload').disabled = true;
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" class="empty"><p>请从上方选择城市和类目</p></td></tr>';
+  document.getElementById('pagination').innerHTML = '';
+  document.getElementById('currentFilter').textContent = region === '全部' ? '-' : region;
+  document.getElementById('currentCount').textContent = '';
+  document.getElementById('tableTitle').textContent = '请选择城市';
 }
 
 function setupCitySearch() {
   const input = document.getElementById('citySearch');
   const dd = document.getElementById('cityDropdown');
-  const cities = Object.keys(indexData).sort((a,b) => indexData[b].count - indexData[a].count);
+
+  function getVisibleCities() {
+    return cityListByRegion[currentRegion] || cityListByRegion['全部'];
+  }
 
   function render(filter) {
+    const cities = getVisibleCities();
     const q = (filter||'').trim();
     const matches = q ? cities.filter(c => c.includes(q)) : cities.slice(0, 40);
     if (!matches.length) { dd.innerHTML = '<div class="dropdown-item" style="color:#bbb">无匹配城市</div>'; dd.classList.add('show'); return; }
@@ -267,7 +365,6 @@ async function selectCity(city) {
 
   const info = indexData[city];
   const chunk = await loadChunk(info.chunk);
-  // row: [PID, 归属, 城市, 门店数, 门店名, 类目]
   cityData = (chunk[city] || []).map(r => ({pid:r[0], attr:r[1], city:r[2], stores:r[3], name:r[4], cat:r[5]}));
   currentPage = 1;
   applyFilter();
@@ -278,7 +375,12 @@ function applyFilter() {
   filteredData = currentCat === '全部' ? cityData : cityData.filter(d => d.cat === currentCat);
   currentPage = 1;
 
-  const label = currentCity + (currentCat !== '全部' ? ' / ' + currentCat : '');
+  const parts = [];
+  if (currentRegion !== '全部') parts.push(currentRegion);
+  parts.push(currentCity);
+  if (currentCat !== '全部') parts.push(currentCat);
+  const label = parts.join(' / ');
+
   document.getElementById('currentFilter').textContent = label;
   document.getElementById('currentCount').textContent = `${filteredData.length.toLocaleString()} 条记录`;
   document.getElementById('tableTitle').textContent = label + ' 商机明细';
