@@ -119,16 +119,16 @@ tr:hover td{background:#f9faff}
       <div class="gate-msg" id="gateMsg"></div>
     </div>
 
-    <!-- Step 2: Notification sent, enter code -->
+    <!-- Step 2: Enter access code -->
     <div class="gate-step" id="gateStep2">
       <div class="gate-sent-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <h3>申请已发送</h3>
-      <p>已通过钉钉通知管理员审批，请联系管理员获取访问口令后输入下方</p>
+      <h3>需要访问口令</h3>
+      <p>请在钉钉上联系管理员获取访问口令，获取后输入下方验证进入</p>
       <input type="text" id="gateCode" placeholder="请输入访问口令" autocomplete="off">
       <button class="gate-btn gate-btn-primary" onclick="gateVerify()">验证进入</button>
-      <button class="gate-btn gate-btn-outline" onclick="gateResend()">重新发送申请</button>
+      <button class="gate-btn gate-btn-outline" onclick="gateResend()">返回</button>
       <div class="gate-msg" id="gateMsg2"></div>
     </div>
   </div>
@@ -510,7 +510,6 @@ function showToast(msg) {
 }
 
 // ---- Access Gate ----
-const WEBHOOK_URL = 'https://oapi.dingtalk.com/robot/send?access_token=6d09e3124759c311382b6fdb6ea608b920149d15ae06c6e81dd587a5980c5857';
 const CODE_HASH = 'c46b22c8559b89a19f85aac0a8270ebeddac8bbfa5d5324c974bee65462c635d';
 
 async function sha256(text) {
@@ -519,33 +518,14 @@ async function sha256(text) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function gateRequest() {
+function gateRequest() {
   const name = document.getElementById('gateName').value.trim();
-  const dept = document.getElementById('gateDept').value.trim();
-  const msg = document.getElementById('gateMsg');
-
-  if (!name) { msg.className = 'gate-msg err'; msg.textContent = '请输入姓名'; return; }
-
-  msg.className = 'gate-msg'; msg.textContent = '正在发送...';
-
-  const payload = {
-    msgtype: 'markdown',
-    markdown: {
-      title: '看板审批请求',
-      text: `### 看板访问审批请求\n\n- **姓名**: ${name}\n- **部门/区域**: ${dept || '未填写'}\n- **时间**: ${new Date().toLocaleString('zh-CN')}\n\n> 请回复访问口令给申请人`
-    }
-  };
-
-  try {
-    await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    });
-  } catch(e) {}
-
-  // Show step 2
+  if (!name) {
+    const msg = document.getElementById('gateMsg');
+    msg.className = 'gate-msg err'; msg.textContent = '请输入姓名';
+    return;
+  }
+  // Show step 2: enter access code
   document.getElementById('gateStep1').classList.remove('active');
   document.getElementById('gateStep2').classList.add('active');
 }
