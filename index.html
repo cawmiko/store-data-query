@@ -56,6 +56,14 @@ tr:hover td{background:#f9faff}
 .tag-channel{background:#e3f2fd;color:#1565c0}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:200;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.notice{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;overflow:hidden}
+.notice-toggle{width:100%;padding:12px 20px;border:none;background:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#0f3460;text-align:left}
+.notice-toggle svg{flex-shrink:0;transition:transform .2s}
+.notice-toggle.open svg{transform:rotate(180deg)}
+.notice-body{padding:0 20px 16px 46px;font-size:12.5px;color:#555;line-height:1.8;display:none}
+.notice-body.show{display:block}
+.notice-body li{margin-bottom:2px}
+.notice-body li::marker{color:#0f3460}
 @media(max-width:768px){
   .toolbar{flex-direction:column;align-items:stretch}
   .stats-bar{flex-direction:column}
@@ -72,6 +80,18 @@ tr:hover td{background:#f9faff}
 </div>
 
 <div class="container">
+  <div class="notice">
+    <button class="notice-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      表格使用说明
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <ol class="notice-body">
+      <li>数据源取至26年6月30日-近90天数据，数据仅做参考，实际数据需以提交宜搭时间前90天数据为准</li>
+      <li>选取符合作业城市商机同步对应服务商，不允许全量下发</li>
+      <li>美食-商业化流转校验SOP</li>
+    </ol>
+  </div>
   <div class="toolbar">
     <div class="filter-group">
       <label>选择城市</label>
