@@ -73,6 +73,28 @@ tr:hover td{background:#f9faff}
 .region-dd .dropdown-item:hover{background:#f5f7ff}
 .region-dd .dropdown-item .cnt{color:#999;font-size:11px}
 .region-dd .dropdown-item.active{background:#e8edff;color:#0f3460;font-weight:500}
+/* Access Gate */
+.gate{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);z-index:9999;display:flex;align-items:center;justify-content:center}
+.gate.hidden{display:none}
+.gate-card{background:#fff;border-radius:16px;padding:36px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.gate-card h2{font-size:18px;color:#1a1a2e;margin-bottom:6px}
+.gate-card .gate-sub{font-size:12px;color:#999;margin-bottom:24px}
+.gate-card input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;margin-bottom:12px;transition:border .2s}
+.gate-card input:focus{border-color:#0f3460}
+.gate-card .gate-btn{width:100%;padding:11px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.gate-card .gate-btn-primary{background:#0f3460;color:#fff}
+.gate-card .gate-btn-primary:hover{background:#1a4a8a}
+.gate-card .gate-btn-outline{background:#fff;color:#0f3460;border:1px solid #0f3460;margin-top:8px}
+.gate-card .gate-btn-outline:hover{background:#f5f7ff}
+.gate-card .gate-msg{font-size:12px;margin-top:12px;min-height:18px}
+.gate-card .gate-msg.err{color:#d32f2f}
+.gate-card .gate-msg.ok{color:#2e7d32}
+.gate-step{display:none}
+.gate-step.active{display:block}
+.gate-step h3{font-size:15px;color:#1a1a2e;margin-bottom:4px}
+.gate-step p{font-size:12px;color:#888;margin-bottom:18px;line-height:1.6}
+.gate-sent-icon{width:48px;height:48px;margin:0 auto 12px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.gate-sent-icon svg{color:#2e7d32}
 @media(max-width:768px){
   .toolbar{flex-direction:column;align-items:stretch}
   .stats-bar{flex-direction:column}
@@ -82,6 +104,35 @@ tr:hover td{background:#f9faff}
 </style>
 </head>
 <body>
+
+<!-- Access Gate -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h2>商业流转商机查询看板</h2>
+    <p class="gate-sub">需要授权访问，请填写信息申请审批</p>
+
+    <!-- Step 1: Request Access -->
+    <div class="gate-step active" id="gateStep1">
+      <input type="text" id="gateName" placeholder="您的姓名" autocomplete="off">
+      <input type="text" id="gateDept" placeholder="部门 / 区域（选填）" autocomplete="off">
+      <button class="gate-btn gate-btn-primary" onclick="gateRequest()">提交访问申请</button>
+      <div class="gate-msg" id="gateMsg"></div>
+    </div>
+
+    <!-- Step 2: Notification sent, enter code -->
+    <div class="gate-step" id="gateStep2">
+      <div class="gate-sent-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>申请已发送</h3>
+      <p>已通过钉钉通知管理员审批，请联系管理员获取访问口令后输入下方</p>
+      <input type="text" id="gateCode" placeholder="请输入访问口令" autocomplete="off">
+      <button class="gate-btn gate-btn-primary" onclick="gateVerify()">验证进入</button>
+      <button class="gate-btn gate-btn-outline" onclick="gateResend()">重新发送申请</button>
+      <div class="gate-msg" id="gateMsg2"></div>
+    </div>
+  </div>
+</div>
 
 <div class="header">
   <h1>商业流转商机查询看板</h1>
@@ -458,7 +509,73 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-init();
+// ---- Access Gate ----
+const WEBHOOK_URL = 'https://oapi.dingtalk.com/robot/send?access_token=6d09e3124759c311382b6fdb6ea608b920149d15ae06c6e81dd587a5980c5857';
+const CODE_HASH = 'c46b22c8559b89a19f85aac0a8270ebeddac8bbfa5d5324c974bee65462c635d';
+
+async function sha256(text) {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function gateRequest() {
+  const name = document.getElementById('gateName').value.trim();
+  const dept = document.getElementById('gateDept').value.trim();
+  const msg = document.getElementById('gateMsg');
+
+  if (!name) { msg.className = 'gate-msg err'; msg.textContent = '请输入姓名'; return; }
+
+  msg.className = 'gate-msg'; msg.textContent = '正在发送...';
+
+  const payload = {
+    msgtype: 'markdown',
+    markdown: {
+      title: '看板审批请求',
+      text: `### 看板访问审批请求\n\n- **姓名**: ${name}\n- **部门/区域**: ${dept || '未填写'}\n- **时间**: ${new Date().toLocaleString('zh-CN')}\n\n> 请回复访问口令给申请人`
+    }
+  };
+
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {}
+
+  // Show step 2
+  document.getElementById('gateStep1').classList.remove('active');
+  document.getElementById('gateStep2').classList.add('active');
+}
+
+async function gateVerify() {
+  const code = document.getElementById('gateCode').value.trim();
+  const msg = document.getElementById('gateMsg2');
+
+  if (!code) { msg.className = 'gate-msg err'; msg.textContent = '请输入口令'; return; }
+
+  msg.className = 'gate-msg'; msg.textContent = '验证中...';
+  const hash = await sha256(code);
+
+  if (hash === CODE_HASH) {
+    document.getElementById('gate').classList.add('hidden');
+    init();
+  } else {
+    msg.className = 'gate-msg err'; msg.textContent = '口令错误，请联系管理员';
+  }
+}
+
+function gateResend() {
+  document.getElementById('gateStep2').classList.remove('active');
+  document.getElementById('gateStep1').classList.add('active');
+  document.getElementById('gateMsg').textContent = '';
+}
+
+// Allow Enter key to submit
+document.getElementById('gateDept').addEventListener('keydown', e => { if (e.key === 'Enter') gateRequest(); });
+document.getElementById('gateCode').addEventListener('keydown', e => { if (e.key === 'Enter') gateVerify(); });
 </script>
 </body>
 </html>
