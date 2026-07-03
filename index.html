@@ -24,10 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .dropdown-item:hover{background:#f5f7ff}
 .dropdown-item .cnt{color:#999;font-size:11px}
 .dropdown-item.active{background:#e8edff;color:#0f3460;font-weight:500}
-.cat-pills{display:flex;gap:6px;flex-wrap:wrap;flex:1}
-.cat-pill{padding:6px 14px;border:1px solid #ddd;border-radius:20px;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;color:#555}
-.cat-pill:hover{border-color:#0f3460;color:#0f3460}
-.cat-pill.active{background:#0f3460;color:#fff;border-color:#0f3460}
+
 .btn{padding:8px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:#0f3460;color:#fff}
 .btn-primary:hover{background:#1a4a8a}
@@ -64,7 +61,6 @@ tr:hover td{background:#f9faff}
   .stats-bar{flex-direction:column}
   th,td{padding:8px 10px;font-size:12px}
   .header h1{font-size:18px}
-  .cat-pills{max-height:80px;overflow-y:auto}
 }
 </style>
 </head>
@@ -85,9 +81,13 @@ tr:hover td{background:#f9faff}
         <div class="dropdown" id="cityDropdown"></div>
       </div>
     </div>
-    <div class="filter-group" style="flex:1;min-width:200px">
+    <div class="filter-group">
       <label>筛选类目</label>
-      <div class="cat-pills" id="catPills"></div>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="catSearch" placeholder="搜索类目..." autocomplete="off">
+        <div class="dropdown" id="catDropdown"></div>
+      </div>
     </div>
     <button class="btn btn-primary" id="btnDownload" disabled onclick="downloadCSV()" style="align-self:flex-end">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -165,21 +165,8 @@ async function init() {
   const catNames = Object.keys(allCats).sort((a,b) => allCats[b] - allCats[a]);
   document.getElementById('totalCats').textContent = catNames.length;
 
-  // Render category pills
-  const pillsEl = document.getElementById('catPills');
-  pillsEl.innerHTML = ['全部', ...catNames].map(c =>
-    `<div class="cat-pill${c==='全部'?' active':''}" data-cat="${c}">${c}</div>`
-  ).join('');
-  pillsEl.addEventListener('click', e => {
-    const pill = e.target.closest('.cat-pill');
-    if (!pill) return;
-    pillsEl.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    currentCat = pill.dataset.cat;
-    applyFilter();
-  });
-
   setupCitySearch();
+  setupCatSearch(catNames, allCats);
 }
 
 function setupCitySearch() {
@@ -199,7 +186,7 @@ function setupCitySearch() {
 
   input.addEventListener('focus', () => render(input.value));
   input.addEventListener('input', () => render(input.value));
-  document.addEventListener('click', e => { if (!e.target.closest('.search-box')) dd.classList.remove('show'); });
+  document.addEventListener('click', e => { if (!e.target.closest('#citySearch') && !e.target.closest('#cityDropdown')) dd.classList.remove('show'); });
 
   dd.addEventListener('click', e => {
     const item = e.target.closest('.dropdown-item');
@@ -209,6 +196,39 @@ function setupCitySearch() {
       dd.classList.remove('show');
     }
   });
+}
+
+function setupCatSearch(catNames, allCats) {
+  const input = document.getElementById('catSearch');
+  const dd = document.getElementById('catDropdown');
+  const allItems = ['全部', ...catNames];
+
+  function render(filter) {
+    const q = (filter||'').trim();
+    const matches = q ? allItems.filter(c => c.includes(q)) : allItems;
+    if (!matches.length) { dd.innerHTML = '<div class="dropdown-item" style="color:#bbb">无匹配类目</div>'; dd.classList.add('show'); return; }
+    dd.innerHTML = matches.map(c => {
+      const cnt = c === '全部' ? Object.values(allCats).reduce((a,b)=>a+b,0) : allCats[c];
+      return `<div class="dropdown-item${c===currentCat?' active':''}" data-cat="${c}"><span>${c}</span><span class="cnt">${cnt.toLocaleString()} 条</span></div>`;
+    }).join('');
+    dd.classList.add('show');
+  }
+
+  input.addEventListener('focus', () => render(input.value));
+  input.addEventListener('input', () => render(input.value));
+  document.addEventListener('click', e => { if (!e.target.closest('#catSearch') && !e.target.closest('#catDropdown')) dd.classList.remove('show'); });
+
+  dd.addEventListener('click', e => {
+    const item = e.target.closest('.dropdown-item');
+    if (item && item.dataset.cat !== undefined) {
+      currentCat = item.dataset.cat;
+      input.value = currentCat;
+      dd.classList.remove('show');
+      applyFilter();
+    }
+  });
+
+  input.value = '全部';
 }
 
 async function loadChunk(chunkId) {
